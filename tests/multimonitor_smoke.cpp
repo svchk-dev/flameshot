@@ -15,6 +15,7 @@
 #include <QPointer>
 #include <QScreen>
 #include <QThread>
+#include <QTemporaryDir>
 #include <iostream>
 #include <cstdlib>
 #include <stdexcept>
@@ -73,6 +74,10 @@ int main(int argc, char** argv)
         require(argc == 2, "Pass a local directory for test captures");
         QDir directory(argv[1]);
         require(directory.mkpath("."), "Cannot create test directory");
+        QTemporaryDir runDirectory(directory.filePath("run-XXXXXX"));
+        require(runDirectory.isValid(), "Cannot create a unique test directory");
+        runDirectory.setAutoRemove(false);
+        directory.setPath(runDirectory.path());
         const auto screens = app.screens();
         require(screens.size() >= 2, "Two monitors are required");
         QRect desktop;
