@@ -13,8 +13,8 @@ window covering the union of the monitor geometries rather than native
 single-monitor fullscreen.
 
 The fork uses a separate D-Bus service, process lock, application/cache name,
-and portable configuration (`bin/flameshot.ini`). Its tray icon has a cyan
-**2** badge. It can run beside the installed `/usr/bin/flameshot`.
+and portable configuration (`bin/flameshot.ini`). Its tray icon retains the
+standard Flameshot appearance. It can run beside the installed `/usr/bin/flameshot`.
 
 ## Build on Ubuntu
 
@@ -40,7 +40,9 @@ checker because official binaries do not contain this patch.
 
 `start` adds the experimental tray icon. `gui` opens the common selection.
 `restore` stops only the experimental service and ensures that the system
-Flameshot is running. No autostart entries or existing hotkeys are changed.
+Flameshot is running. It requires the standard `/usr/bin/flameshot` to be
+installed; otherwise it reports that the package is missing and keeps the
+current service running. No autostart entries or existing hotkeys are changed.
 On the first start, the bundle copies the regular configuration; subsequent
 changes apply only to the bundle's copy.
 

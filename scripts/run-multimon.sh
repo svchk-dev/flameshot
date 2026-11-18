@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-bundle_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+script_path=$(readlink -f -- "${BASH_SOURCE[0]}")
+bundle_dir=$(dirname -- "$script_path")
 binary="$bundle_dir/bin/flameshot"
 unit=flameshot-multimon.service
 service=org.flameshot.FlameshotMultiMonitor
@@ -19,7 +20,7 @@ start_daemon() {
         printf 'Build the MultiMonitor bundle first.\n' >&2
         exit 1
     fi
-    if [[ ! -f "$bundle_dir/bin/flameshot.ini" ]]; then
+    if [[ ! -s "$bundle_dir/bin/flameshot.ini" ]]; then
         python3 - "$bundle_dir/bin/flameshot.ini" <<'PY'
 import configparser, os, pathlib, sys
 config = configparser.ConfigParser(interpolation=None)
@@ -55,6 +56,10 @@ case "$action" in
         ;;
     stop) systemctl --user stop "$unit" ;;
     restore)
+        if [[ ! -x /usr/bin/flameshot ]]; then
+            printf 'The standard Flameshot package is not installed.\n' >&2
+            exit 1
+        fi
         systemctl --user stop "$unit" 2>/dev/null || true
         if ! has_owner org.flameshot.Flameshot; then
             systemd-run --user --collect --unit=flameshot-stock /usr/bin/flameshot

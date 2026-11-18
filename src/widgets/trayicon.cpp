@@ -9,7 +9,6 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QMenu>
-#include <QPainter>
 #include <QScreen>
 #include <QTimer>
 #include <QUrl>
@@ -47,21 +46,7 @@ TrayIcon::TrayIcon(QObject* parent)
     }
 #endif
 
-    // Distinguish the experimental tray icon from the installed Flameshot.
-    QPixmap badged = icon.pixmap(32, 32);
-    QPainter badgePainter(&badged);
-    badgePainter.setRenderHint(QPainter::Antialiasing);
-    badgePainter.setPen(Qt::NoPen);
-    badgePainter.setBrush(QColor("#00bcd4"));
-    badgePainter.drawEllipse(QRect(15, 15, 17, 17));
-    badgePainter.setPen(Qt::black);
-    QFont badgeFont = badgePainter.font();
-    badgeFont.setPixelSize(14);
-    badgeFont.setBold(true);
-    badgePainter.setFont(badgeFont);
-    badgePainter.drawText(QRect(15, 15, 17, 17), Qt::AlignCenter, "2");
-    badgePainter.end();
-    setIcon(QIcon(badged));
+    setIcon(icon);
 
 #if defined(Q_OS_MACOS)
     if (currentMacOsVersion < QOperatingSystemVersion::MacOSBigSur) {
