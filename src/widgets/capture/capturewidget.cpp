@@ -108,6 +108,11 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
 
     ScreenGrabber grabber;
     QScreen* selectedScreen = nullptr;
+#if defined(Q_OS_LINUX)
+    // This build uses an XWayland overlay for a single continuous selection.
+    // Explicit `screen --number ... --edit` requests still select one monitor.
+    m_spansDesktop = fullScreen && !req.hasSelectedMonitor();
+#endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_MACOS))
     // Top left of the whole set of screens
@@ -121,8 +126,9 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
         } else {
             preSelectedMonitor = -1;
         }
-        m_context.screenshot =
-          grabber.grabEntireDesktop(ok, preSelectedMonitor);
+        m_context.screenshot = m_spansDesktop
+                                 ? grabber.grabFullDesktop(ok)
+                                 : grabber.grabEntireDesktop(ok, preSelectedMonitor);
         if (!ok) {
             // Error already logged in ScreenGrabber
             this->close();
@@ -189,23 +195,38 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
         }
 #endif
 
-        // Always display on the selected screen (not spanning entire desktop)
-        if (selectedScreen == nullptr) {
-            selectedScreen = QGuiApplication::primaryScreen();
+        if (m_spansDesktop) {
+            QRect desktopGeom;
+            for (QScreen* screen : QGuiApplication::screens()) {
+                desktopGeom = desktopGeom.united(screen->geometry());
+            }
+            // The portal returns physical pixels. Normalize their density to
+            // the XWayland desktop coordinates used by mouse events.
+            const qreal dpr = qreal(m_context.screenshot.width()) /
+                              desktopGeom.width();
+            m_context.screenshot.setDevicePixelRatio(dpr);
+            m_context.origScreenshot = m_context.screenshot;
+            setGeometry(desktopGeom);
+            setWindowTitle(QStringLiteral("Flameshot MultiMonitor Capture"));
+        } else {
+            if (selectedScreen == nullptr) {
+                selectedScreen = QGuiApplication::primaryScreen();
+            }
+            setGeometry(selectedScreen->geometry());
+            if (windowHandle()) {
+                windowHandle()->setScreen(selectedScreen);
+            }
+            m_selectedScreen = selectedScreen;
         }
-        QRect screenGeom = selectedScreen->geometry();
-        move(screenGeom.topLeft());
-        resize(screenGeom.size());
-
-        if (selectedScreen != nullptr && windowHandle()) {
-            windowHandle()->setScreen(selectedScreen);
-        }
-        m_selectedScreen = selectedScreen;
 #endif
     }
 
     QVector<QRect> areas;
-    if (m_context.fullscreen) {
+    if (m_spansDesktop) {
+        for (QScreen* screen : QGuiApplication::screens()) {
+            areas.append(screen->geometry().translated(-geometry().topLeft()));
+        }
+    } else if (m_context.fullscreen) {
         // Always display on a single screen, normalized to (0, 0)
         QScreen* screenForAreas = selectedScreen;
         if (!screenForAreas) {

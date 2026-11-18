@@ -54,6 +54,7 @@ public:
     ~CaptureWidget();
 
     QPixmap pixmap();
+    bool spansDesktop() const { return m_spansDesktop; }
     void setCaptureToolObjects(const CaptureToolObjects& captureToolObjects);
 #if !defined(DISABLE_UPDATE_CHECKER)
     void showAppUpdateNotification(const QString& appLatestVersion,
@@ -164,6 +165,7 @@ private:
     // Context information
     CaptureContext m_context;
     QScreen* m_selectedScreen = nullptr;
+    bool m_spansDesktop = false;
 
     // Main ui color
     QColor m_uiColor;

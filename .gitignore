@@ -79,6 +79,7 @@ data/flatpak/.flatpak-builder
 # Nix
 result
 result-*
+/dist/
 
 # direnv
 .direnv

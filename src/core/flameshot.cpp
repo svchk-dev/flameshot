@@ -196,7 +196,14 @@ CaptureWidget* Flameshot::gui(const CaptureRequest& req)
         m_captureWindow->activateWindow();
         m_captureWindow->raise();
 #else
-        m_captureWindow->showFullScreen();
+        if (m_captureWindow->spansDesktop()) {
+            // Native fullscreen confines an XWayland window to one monitor.
+            m_captureWindow->show();
+            m_captureWindow->raise();
+            m_captureWindow->activateWindow();
+        } else {
+            m_captureWindow->showFullScreen();
+        }
 //        m_captureWindow->show(); // For CaptureWidget Debugging under Linux
 #endif
         return m_captureWindow;

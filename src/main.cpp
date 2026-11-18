@@ -94,7 +94,7 @@ int requestCaptureAndWait(const CaptureRequest& req)
 
 QSharedMemory* guiMutexLock()
 {
-    QString key = "org.flameshot.Flameshot-" APP_VERSION;
+    QString key = "org.flameshot.FlameshotMultiMonitor-" APP_VERSION;
     auto* shm = new QSharedMemory(key);
 #ifdef Q_OS_UNIX
     // Destroy shared memory if the last instance crashed on Unix
@@ -214,6 +214,10 @@ void reinitializeAsQApplication(int& argc,
 
 int main(int argc, char* argv[])
 {
+#if defined(Q_OS_LINUX)
+    // A native Wayland toplevel cannot span the outputs as this overlay needs.
+    qputenv("QT_QPA_PLATFORM", "xcb");
+#endif
 
     QTranslator translator, qtTranslator;
 
@@ -221,7 +225,7 @@ int main(int argc, char* argv[])
     qRegisterMetaType<QList<int>>();
 
     QCoreApplication::setApplicationVersion(APP_VERSION);
-    QCoreApplication::setApplicationName(QStringLiteral("flameshot"));
+    QCoreApplication::setApplicationName(QStringLiteral("flameshot-multimon"));
     QCoreApplication::setOrganizationName(QStringLiteral("flameshot"));
     QNetworkProxyFactory::setUseSystemConfiguration(true);
 
@@ -236,7 +240,7 @@ int main(int argc, char* argv[])
         auto signalDaemon = SignalDaemon();
 #endif
         auto kdsa =
-          KDSingleApplication(QStringLiteral("org.flameshot.Flameshot"));
+          KDSingleApplication(QStringLiteral("org.flameshot.FlameshotMultiMonitor"));
 
         if (!kdsa.isPrimaryInstance() &&
             !ConfigHandler().allowMultipleGuiInstances()) {
@@ -267,7 +271,7 @@ int main(int argc, char* argv[])
               << QObject::tr("Unable to connect via DBus");
         }
         dbus.registerObject(QStringLiteral("/"), c);
-        dbus.registerService(QStringLiteral("org.flameshot.Flameshot"));
+        dbus.registerService(QStringLiteral("org.flameshot.FlameshotMultiMonitor"));
 #endif
         return qApp->exec();
     }
